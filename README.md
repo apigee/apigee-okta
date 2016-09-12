@@ -18,6 +18,11 @@ Okta to authenticate users (an OAuth "[Authorization Server](https://tools.ietf.
 issue tokens, using Apigee to protect resources (an OAuth "Resource
 Server") via tokens issued by Okta.
 
+#Dependencies
+
+This project leverages the following project for JWT validations:
+https://github.com/apigee/iloveapis2015-jwt-jwe-jws
+
 # Creating an Okta application for OpenID Connect
 
 Follow the steps below if you haven't yet created an Okta
