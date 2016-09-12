@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="UseUser-JWT-in-Header">
+    <DisplayName>UseUser JWT in Header</DisplayName>
+    <Properties/>
+    <Set>
+        <Headers>
+            <Header name="X-JWT">{accesstoken.user_jot}</Header>
+        </Headers>
+    </Set>
+    <Remove>
+        <Headers>
+            <Header name="Authorization"/>
+        </Headers>
+    </Remove>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <AssignTo createNew="false" transport="http" type="request"/>
+</AssignMessage>

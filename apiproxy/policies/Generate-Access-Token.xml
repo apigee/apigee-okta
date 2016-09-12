@@ -9,4 +9,7 @@
         <GrantType>client_credentials</GrantType>
     </SupportedGrantTypes>
     <GenerateResponse/>
+    <Attributes>
+        <Attribute name="user_jot" ref="jwt_jwt" display="false">sample_token</Attribute>
+    </Attributes>
 </OAuthV2>
