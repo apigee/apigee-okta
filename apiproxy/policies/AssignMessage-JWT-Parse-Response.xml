@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage name="AssignMessage-JWT-Parse-Response">
+    <!-- This Policy was originally found in: https://github.com/apigee/iloveapis2015-jwt-jwe-jws -->
+    <DisplayName>AssignMessage JWT Parse Response</DisplayName>
+    <Description>respond with information about the parsed JWT</Description>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+    <Remove>
+        <Headers>
+            <!-- in this proxy, there is no target, therefore request headers
+           get copied into the response. These make no sense in a
+           response, so let's remove them. -->
+            <Header name="Accept"/>
+            <Header name="X-Forwarded-For"/>
+            <Header name="X-Forwarded-Port"/>
+            <Header name="X-Forwarded-Proto"/>
+            <Header name="User-Agent"/>
+        </Headers>
+    </Remove>
+    <Set>
+        <Payload contentType="application/json" variablePrefix="%" variableSuffix="#"><![CDATA[{
+   "jwt" : "%jwt_jwt#",
+   "header" : %jwt_jwtheader#,
+   "claims" : %jwt_claims#,
+   "secondsRemaining" : "%jwt_secondsRemaining#",
+   "timeRemainingFormatted" : "%jwt_timeRemainingFormatted#",
+   "signed" : "%jwt_isSigned#",
+   "verified" : "%jwt_verified#",
+   "isExpired" : "%jwt_isExpired#",
+   "isValid" : "%jwt_isValid#",
+   "message" : "%jwt_reason#"
+ }
+ ]]></Payload>
+        <StatusCode>200</StatusCode>
+        <ReasonPhrase>OK</ReasonPhrase>
+    </Set>
+</AssignMessage>

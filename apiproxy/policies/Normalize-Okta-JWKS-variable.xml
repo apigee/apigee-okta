@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="Normalize-Okta-JWKS-variable">
+    <DisplayName>Normalize Okta JWKS variable</DisplayName>
+    <AssignVariable>
+        <Name>okta_jwks</Name>
+        <Ref>cached.okta_jwks</Ref>
+    </AssignVariable>
+</AssignMessage>

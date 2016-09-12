@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+    <RouteRule name="Secured REST Time Service">
+        <Condition>(proxy.pathsuffix MatchesPath "/time_t")</Condition>
+        <URL>http://resttime.herokuapp.com</URL>
+    </RouteRule>
+    <HTTPProxyConnection>
+        <BasePath>/jwt-bearer</BasePath>
+        <VirtualHost>default</VirtualHost>
+        <VirtualHost>secure</VirtualHost>
+    </HTTPProxyConnection>
+    <PreFlow name="PreFlow">
+        <Request/>
+    </PreFlow>
+    <PostFlow name="PostFlow"/>
+    <Flows>
+        <Flow name="Validate Okta JWT">
+            <Condition>(proxy.pathsuffix ~~ "/validate$") and (request.verb = "POST")</Condition>
+            <Description>Parse / Verify a JWT created by Okta</Description>
+            <Request>
+                <Step>
+                    <Name>Get-Key-ID-and-Issuer</Name>
+                </Step>
+                <Step>
+                    <Name>Look-for-cached-JWK</Name>
+                </Step>
+                <Step>
+                    <Name>Fetch-OpenID-Configuration</Name>
+                    <Condition>cached.okta_jwks = null</Condition>
+                </Step>
+                <Step>
+                    <Name>Extract-JWKS-URI</Name>
+                    <Condition>cached.okta_jwks = null</Condition>
+                </Step>
+                <Step>
+                    <Name>Extract-JWKS-URI-without-protocol</Name>
+                    <Condition>cached.okta_jwks = null</Condition>
+                </Step>
+                <Step>
+                    <Name>Fetch-JWKS-URI</Name>
+                    <Condition>cached.okta_jwks = null</Condition>
+                </Step>
+                <Step>
+                    <Name>Store-JWKS-response-content-in-variable</Name>
+                    <Condition>cached.okta_jwks = null</Condition>
+                </Step>
+                <Step>
+                    <Name>Cache-JWK</Name>
+                    <Condition>cached.okta_jwks = null</Condition>
+                </Step>
+                <Step>
+                    <Name>Normalize-Okta-JWKS-variable</Name>
+                    <Condition>cached.okta_jwks != null</Condition>
+                </Step>
+                <Step>
+                    <Name>Fetch-Modulus-and-Exponent-for-Key-ID</Name>
+                </Step>
+                <Step>
+                    <Name>JWT-Parse-Verify-RS256-okta</Name>
+                </Step>
+                <Step>
+                    <Name>Error-on-invalid-token</Name>
+                    <Condition>jwt_isValid != true</Condition>
+                </Step>
+            </Request>
+            <Response>
+                <Step>
+                    <Name>AssignMessage-JWT-Parse-Response</Name>
+                </Step>
+            </Response>
+        </Flow>
+        <Flow name="RFC7523 JWT Bearer">
+            <Condition>(proxy.pathsuffix ~~ "/oauth/accesstoken")and (request.verb = "POST")</Condition>
+            <Description>Require a valid id_token from Okta</Description>
+            <Request>
+                <Step>
+                    <Name>Get-Key-ID-and-Issuer</Name>
+                </Step>
+                <Step>
+                    <Name>Look-for-cached-JWK</Name>
+                </Step>
+                <Step>
+                    <Name>Fetch-OpenID-Configuration</Name>
+                    <Condition>cached.okta_jwks = null</Condition>
+                </Step>
+                <Step>
+                    <Name>Extract-JWKS-URI</Name>
+                    <Condition>cached.okta_jwks = null</Condition>
+                </Step>
+                <Step>
+                    <Name>Extract-JWKS-URI-without-protocol</Name>
+                    <Condition>cached.okta_jwks = null</Condition>
+                </Step>
+                <Step>
+                    <Name>Fetch-JWKS-URI</Name>
+                    <Condition>cached.okta_jwks = null</Condition>
+                </Step>
+                <Step>
+                    <Name>Store-JWKS-response-content-in-variable</Name>
+                    <Condition>cached.okta_jwks = null</Condition>
+                </Step>
+                <Step>
+                    <Name>Cache-JWK</Name>
+                    <Condition>cached.okta_jwks = null</Condition>
+                </Step>
+                <Step>
+                    <Name>Normalize-Okta-JWKS-variable</Name>
+                    <Condition>cached.okta_jwks != null</Condition>
+                </Step>
+                <Step>
+                    <Name>Fetch-Modulus-and-Exponent-for-Key-ID</Name>
+                </Step>
+                <Step>
+                    <Name>JWT-Parse-Verify-RS256-okta</Name>
+                </Step>
+                <Step>
+                    <Name>Configure-OAuth</Name>
+                </Step>
+                <Step>
+                    <Name>Error-on-invalid-token</Name>
+                    <Condition>jwt_isValid != true</Condition>
+                </Step>
+            </Request>
+            <Response>
+                <Step>
+                    <Name>Generate-Access-Token</Name>
+                </Step>
+            </Response>
+        </Flow>
+        <Flow name="Secured REST Time Service">
+            <Description/>
+            <Request>
+                <Step>
+                    <Name>VerifyOAuthAccessToken</Name>
+                </Step>
+            </Request>
+            <Response/>
+            <Condition>(proxy.pathsuffix MatchesPath "/time_t")</Condition>
+        </Flow>
+    </Flows>
+    <!-- catch all route -->
+    <RouteRule name="default"/>
+</ProxyEndpoint>

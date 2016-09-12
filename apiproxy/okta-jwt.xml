@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<APIProxy revision="15" name="okta-jwt">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <CreatedAt>1469061840615</CreatedAt>
+    <CreatedBy>joel.franusic@okta.com</CreatedBy>
+    <DisplayName></DisplayName>
+    <LastModifiedAt>1469062039387</LastModifiedAt>
+    <LastModifiedBy>joel.franusic@okta.com</LastModifiedBy>
+    <Policies>
+        <Policy>AssignMessage-JWT-Parse-Response</Policy>
+        <Policy>Cache-JWK</Policy>
+        <Policy>Configure-OAuth</Policy>
+        <Policy>Error-on-invalid-token</Policy>
+        <Policy>Extract-JWKS-URI-without-protocol</Policy>
+        <Policy>Extract-JWKS-URI</Policy>
+        <Policy>Fetch-JWKS-URI</Policy>
+        <Policy>Fetch-Modulus-and-Exponent-for-Key-ID</Policy>
+        <Policy>Fetch-OpenID-Configuration</Policy>
+        <Policy>Generate-Access-Token</Policy>
+        <Policy>Get-Key-ID-and-Issuer</Policy>
+        <Policy>JWT-Parse-Verify-RS256-okta</Policy>
+        <Policy>Look-for-cached-JWK</Policy>
+        <Policy>Normalize-Okta-JWKS-variable</Policy>
+        <Policy>Store-JWKS-response-content-in-variable</Policy>
+        <Policy>VerifyOAuthAccessToken</Policy>
+    </Policies>
+    <ProxyEndpoints>
+        <ProxyEndpoint>default</ProxyEndpoint>
+    </ProxyEndpoints>
+    <Resources>
+        <Resource>jsc://Fetch-Modulus-and-Exponent-for-Key-ID.js</Resource>
+        <Resource>jsc://Get-Key-ID-and-Issuer.js</Resource>
+        <Resource>jsc://jwtDecode.js</Resource>
+        <Resource>java://guava-18.0.jar</Resource>
+        <Resource>java://json-smart-1.3.jar</Resource>
+        <Resource>java://jwt-signed-edge-callout.jar</Resource>
+        <Resource>java://nimbus-jose-jwt-3.1.2.jar</Resource>
+    </Resources>
+    <TargetServers/>
+    <TargetEndpoints/>
+    <validate>false</validate>
+</APIProxy>

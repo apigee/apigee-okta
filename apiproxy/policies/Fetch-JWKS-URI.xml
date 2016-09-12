@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ServiceCallout async="false" continueOnError="false" enabled="true" name="Fetch-JWKS-URI">
+    <DisplayName>Fetch JWKS URI</DisplayName>
+    <Response>jwks_response</Response>
+    <HTTPTargetConnection>
+        <URL>https://{jwks_url_host}/{jwks_url_path}</URL>
+    </HTTPTargetConnection>
+</ServiceCallout>

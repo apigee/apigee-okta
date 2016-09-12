@@ -1,0 +1,565 @@
+# How it works
+
+## okta-jwt.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <APIProxy revision="15" name="okta-jwt">
+        <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+        <CreatedAt>1469061840615</CreatedAt>
+        <CreatedBy>joel.franusic@okta.com</CreatedBy>
+        <DisplayName></DisplayName>
+        <LastModifiedAt>1469062039387</LastModifiedAt>
+        <LastModifiedBy>joel.franusic@okta.com</LastModifiedBy>
+        <Policies>
+            <Policy>AssignMessage-JWT-Parse-Response</Policy>
+            <Policy>Cache-JWK</Policy>
+            <Policy>Configure-OAuth</Policy>
+            <Policy>Error-on-invalid-token</Policy>
+            <Policy>Extract-JWKS-URI-without-protocol</Policy>
+            <Policy>Extract-JWKS-URI</Policy>
+            <Policy>Fetch-JWKS-URI</Policy>
+            <Policy>Fetch-Modulus-and-Exponent-for-Key-ID</Policy>
+            <Policy>Fetch-OpenID-Configuration</Policy>
+            <Policy>Generate-Access-Token</Policy>
+            <Policy>Get-Key-ID-and-Issuer</Policy>
+            <Policy>JWT-Parse-Verify-RS256-okta</Policy>
+            <Policy>Look-for-cached-JWK</Policy>
+            <Policy>Normalize-Okta-JWKS-variable</Policy>
+            <Policy>Store-JWKS-response-content-in-variable</Policy>
+            <Policy>VerifyOAuthAccessToken</Policy>
+        </Policies>
+        <ProxyEndpoints>
+            <ProxyEndpoint>default</ProxyEndpoint>
+        </ProxyEndpoints>
+        <Resources>
+            <Resource>jsc://Fetch-Modulus-and-Exponent-for-Key-ID.js</Resource>
+            <Resource>jsc://Get-Key-ID-and-Issuer.js</Resource>
+            <Resource>jsc://jwtDecode.js</Resource>
+            <Resource>java://guava-18.0.jar</Resource>
+            <Resource>java://json-smart-1.3.jar</Resource>
+            <Resource>java://jwt-signed-edge-callout.jar</Resource>
+            <Resource>java://nimbus-jose-jwt-3.1.2.jar</Resource>
+        </Resources>
+        <TargetServers/>
+        <TargetEndpoints/>
+        <validate>false</validate>
+    </APIProxy>
+
+## Policies
+
+### AssignMessage-JWT-Parse-Response.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <AssignMessage name="AssignMessage-JWT-Parse-Response">
+        <!-- This Policy was originally found in: https://github.com/apigee/iloveapis2015-jwt-jwe-jws -->
+        <DisplayName>AssignMessage JWT Parse Response</DisplayName>
+        <Description>respond with information about the parsed JWT</Description>
+        <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+        <Remove>
+            <Headers>
+                <!-- in this proxy, there is no target, therefore request headers
+               get copied into the response. These make no sense in a
+               response, so let's remove them. -->
+                <Header name="Accept"/>
+                <Header name="X-Forwarded-For"/>
+                <Header name="X-Forwarded-Port"/>
+                <Header name="X-Forwarded-Proto"/>
+                <Header name="User-Agent"/>
+            </Headers>
+        </Remove>
+        <Set>
+            <Payload contentType="application/json" variablePrefix="%" variableSuffix="#"><![CDATA[{
+       "jwt" : "%jwt_jwt#",
+       "header" : %jwt_jwtheader#,
+       "claims" : %jwt_claims#,
+       "secondsRemaining" : "%jwt_secondsRemaining#",
+       "timeRemainingFormatted" : "%jwt_timeRemainingFormatted#",
+       "signed" : "%jwt_isSigned#",
+       "verified" : "%jwt_verified#",
+       "isExpired" : "%jwt_isExpired#",
+       "isValid" : "%jwt_isValid#",
+       "message" : "%jwt_reason#"
+     }
+     ]]></Payload>
+            <StatusCode>200</StatusCode>
+            <ReasonPhrase>OK</ReasonPhrase>
+        </Set>
+    </AssignMessage>
+
+### Cache-JWK.xml
+
+1 hour is 3600 seconds.
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <PopulateCache async="false" continueOnError="false" enabled="true" name="Cache-JWK">
+        <DisplayName>Cache JWK</DisplayName>
+        <CacheKey>
+            <Prefix/>
+            <KeyFragment ref="id_token.iss_domain"/>
+        </CacheKey>
+        <CacheResource>jwk_cache</CacheResource>
+        <Scope>Exclusive</Scope>
+        <ExpirySettings>
+            <TimeoutInSec>3600</TimeoutInSec>
+        </ExpirySettings>
+        <Source>okta_jwks</Source>
+    </PopulateCache>
+
+### Configure-OAuth.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <AssignMessage async="false" continueOnError="false" enabled="true" name="Configure-OAuth">
+        <DisplayName>Configure OAuth</DisplayName>
+        <!-- We are setting the OAuth credentials here to better match the RFC 7523 standard -->
+        <Add>
+            <FormParams>
+                <!-- 
+                NOTE:
+    
+                The credentials here must be for 
+                * An Apigee Developer Account, which is
+                * Attached to an Apigee App, that is 
+                * In an Apigee API Product, which
+                * Has this API Proxy listed as a "Resource"
+    
+                Learn more here: http://docs.apigee.com/tutorials/secure-calls-your-api-through-oauth-20-client-credentials
+                -->
+                <FormParam name="grant_type">client_credentials</FormParam>
+                <FormParam name="client_id">ADD YOUR CLIENT ID HERE</FormParam>
+                <FormParam name="client_secret">ADD YOUR CLIENT SECRET HERE</FormParam>
+            </FormParams>
+        </Add>
+        <AssignTo createNew="false" transport="http" type="request"/>
+    </AssignMessage>
+
+### Error-on-invalid-token.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <RaiseFault async="false" continueOnError="false" enabled="true" name="Error-on-invalid-token">
+        <DisplayName>Error on invalid token</DisplayName>
+        <FaultResponse>
+            <Set>
+                <Payload contentType="text/plain"/>
+                <StatusCode>400</StatusCode>
+                <ReasonPhrase>Invalid id_token</ReasonPhrase>
+            </Set>
+        </FaultResponse>
+    </RaiseFault>
+
+### Extract-JWKS-URI-without-protocol.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <ExtractVariables async="false" continueOnError="false" enabled="true" name="Extract-JWKS-URI-without-protocol">
+        <DisplayName>Extract JWKS URI without protocol</DisplayName>
+        <Variable name="openid.jwks_uri">
+            <Pattern ignoreCase="true">https://{jwks_url_host}/{jwks_url_path}</Pattern>
+        </Variable>
+    </ExtractVariables>
+
+### Extract-JWKS-URI.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <ExtractVariables async="false" continueOnError="false" enabled="true" name="Extract-JWKS-URI">
+        <DisplayName>Extract JWKS URI</DisplayName>
+        <Source>openid_configuration_response.content</Source>
+        <VariablePrefix>openid</VariablePrefix>
+        <JSONPayload>
+            <Variable name="jwks_uri">
+                <JSONPath>$.jwks_uri</JSONPath>
+            </Variable>
+        </JSONPayload>
+    </ExtractVariables>
+
+### Fetch-JWKS-URI.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <ServiceCallout async="false" continueOnError="false" enabled="true" name="Fetch-JWKS-URI">
+        <DisplayName>Fetch JWKS URI</DisplayName>
+        <Response>jwks_response</Response>
+        <HTTPTargetConnection>
+            <URL>https://{jwks_url_host}/{jwks_url_path}</URL>
+        </HTTPTargetConnection>
+    </ServiceCallout>
+
+### Fetch-Modulus-and-Exponent-for-Key-ID.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <Javascript async="false" continueOnError="false" enabled="true" timeLimit="200" name="Fetch-Modulus-and-Exponent-for-Key-ID">
+        <DisplayName>Fetch Modulus and Exponent for Key ID</DisplayName>
+        <ResourceURL>jsc://Fetch-Modulus-and-Exponent-for-Key-ID.js</ResourceURL>
+    </Javascript>
+
+### Fetch-OpenID-Configuration.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <ServiceCallout async="false" continueOnError="false" enabled="true" name="Fetch-OpenID-Configuration">
+        <DisplayName>Fetch OpenID Configuration</DisplayName>
+        <Response>openid_configuration_response</Response>
+        <HTTPTargetConnection>
+            <URL>https://{id_token.iss_domain}/.well-known/openid-configuration</URL>
+        </HTTPTargetConnection>
+    </ServiceCallout>
+
+### Generate-Access-Token.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <OAuthV2 async="false" continueOnError="false" enabled="true" name="Generate-Access-Token">
+        <DisplayName>Generate Access Token</DisplayName>
+        <!-- 3600000 is 1 hour in milliseconds -->
+        <!-- WARNING: On a production system, this should be issued for the remaining valid time of the id_token -->
+        <ExpiresIn>3600000</ExpiresIn>
+        <Operation>GenerateAccessToken</Operation>
+        <SupportedGrantTypes>
+            <GrantType>client_credentials</GrantType>
+        </SupportedGrantTypes>
+        <GenerateResponse/>
+    </OAuthV2>
+
+### Get-Key-ID-and-Issuer.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <Javascript async="false" continueOnError="false" enabled="true" timeLimit="200" name="Get-Key-ID-and-Issuer">
+        <DisplayName>Get Key ID and Issuer</DisplayName>
+        <IncludeURL>jsc://jwtDecode.js</IncludeURL>
+        <ResourceURL>jsc://Get-Key-ID-and-Issuer.js</ResourceURL>
+    </Javascript>
+
+### JWT-Parse-Verify-RS256-okta.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <JavaCallout name="JWT-Parse-Verify-RS256-okta">
+        <Properties>
+            <Property name="algorithm">RS256</Property>
+            <Property name="jwt">{request.formparam.assertion}</Property>
+            <Property name="modulus">{public_key.modulus}</Property>
+            <Property name="exponent">{public_key.exponent}</Property>
+            <!-- Claims to verify. WARNING! On a production system, you MUST validate the 'aud'  -->
+            <!-- See also: http://developer.okta.com/docs/api/resources/oidc.html#validating-id-tokens -->
+            <!-- <Property name="claim_iss">https://example.okta.com</Property> -->
+            <Property name="claim_iss">{id_token.iss}</Property>
+            <!-- <Property name="claim_aud">aBCdEf0GhiJkLMno1pq2</Property> -->
+            <!-- You can include custom claims: -->
+            <!-- <Property name="claim_shoesize">8.5</Property> -->
+        </Properties>
+        <ClassName>com.apigee.callout.jwtsigned.JwtParserCallout</ClassName>
+        <ResourceURL>java://jwt-signed-edge-callout.jar</ResourceURL>
+    </JavaCallout>
+
+### Look-for-cached-JWK.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <LookupCache async="false" continueOnError="false" enabled="true" name="Look-for-cached-JWK">
+        <DisplayName>Look for cached JWK</DisplayName>
+        <CacheKey>
+            <KeyFragment ref="id_token.iss_domain"/>
+        </CacheKey>
+        <CacheResource>jwk_cache</CacheResource>
+        <Scope>Exclusive</Scope>
+        <AssignTo>cached.okta_jwks</AssignTo>
+    </LookupCache>
+
+### Normalize-Okta-JWKS-variable.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <AssignMessage async="false" continueOnError="false" enabled="true" name="Normalize-Okta-JWKS-variable">
+        <DisplayName>Normalize Okta JWKS variable</DisplayName>
+        <AssignVariable>
+            <Name>okta_jwks</Name>
+            <Ref>cached.okta_jwks</Ref>
+        </AssignVariable>
+    </AssignMessage>
+
+### Store-JWKS-response-content-in-variable.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <ExtractVariables async="false" continueOnError="false" enabled="true" name="Store-JWKS-response-content-in-variable">
+        <DisplayName>Store JWKS response content in variable</DisplayName>
+        <Variable name="jwks_response.content">
+            <Pattern>{okta_jwks}</Pattern>
+        </Variable>
+    </ExtractVariables>
+
+### VerifyOAuthAccessToken.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <OAuthV2 async="false" continueOnError="false" enabled="true" name="VerifyOAuthAccessToken">
+        <DisplayName>VerifyOAuthAccessToken</DisplayName>
+        <ExternalAuthorization>false</ExternalAuthorization>
+        <Operation>VerifyAccessToken</Operation>
+        <GenerateResponse enabled="true"/>
+    </OAuthV2>
+
+## Proxies
+
+### default.xml
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <ProxyEndpoint name="default">
+        <RouteRule name="Secured REST Time Service">
+            <Condition>(proxy.pathsuffix MatchesPath "/time_t")</Condition>
+            <URL>http://resttime.herokuapp.com</URL>
+        </RouteRule>
+        <HTTPProxyConnection>
+            <BasePath>/jwt-bearer</BasePath>
+            <VirtualHost>default</VirtualHost>
+            <VirtualHost>secure</VirtualHost>
+        </HTTPProxyConnection>
+        <PreFlow name="PreFlow">
+            <Request/>
+        </PreFlow>
+        <PostFlow name="PostFlow"/>
+        <Flows>
+            <Flow name="Validate Okta JWT">
+                <Condition>(proxy.pathsuffix ~~ "/validate$") and (request.verb = "POST")</Condition>
+                <Description>Parse / Verify a JWT created by Okta</Description>
+                <Request>
+                    <Step>
+                        <Name>Get-Key-ID-and-Issuer</Name>
+                    </Step>
+                    <Step>
+                        <Name>Look-for-cached-JWK</Name>
+                    </Step>
+                    <Step>
+                        <Name>Fetch-OpenID-Configuration</Name>
+                        <Condition>cached.okta_jwks = null</Condition>
+                    </Step>
+                    <Step>
+                        <Name>Extract-JWKS-URI</Name>
+                        <Condition>cached.okta_jwks = null</Condition>
+                    </Step>
+                    <Step>
+                        <Name>Extract-JWKS-URI-without-protocol</Name>
+                        <Condition>cached.okta_jwks = null</Condition>
+                    </Step>
+                    <Step>
+                        <Name>Fetch-JWKS-URI</Name>
+                        <Condition>cached.okta_jwks = null</Condition>
+                    </Step>
+                    <Step>
+                        <Name>Store-JWKS-response-content-in-variable</Name>
+                        <Condition>cached.okta_jwks = null</Condition>
+                    </Step>
+                    <Step>
+                        <Name>Cache-JWK</Name>
+                        <Condition>cached.okta_jwks = null</Condition>
+                    </Step>
+                    <Step>
+                        <Name>Normalize-Okta-JWKS-variable</Name>
+                        <Condition>cached.okta_jwks != null</Condition>
+                    </Step>
+                    <Step>
+                        <Name>Fetch-Modulus-and-Exponent-for-Key-ID</Name>
+                    </Step>
+                    <Step>
+                        <Name>JWT-Parse-Verify-RS256-okta</Name>
+                    </Step>
+                    <Step>
+                        <Name>Error-on-invalid-token</Name>
+                        <Condition>jwt_isValid != true</Condition>
+                    </Step>
+                </Request>
+                <Response>
+                    <Step>
+                        <Name>AssignMessage-JWT-Parse-Response</Name>
+                    </Step>
+                </Response>
+            </Flow>
+            <Flow name="RFC7523 JWT Bearer">
+                <Condition>(proxy.pathsuffix ~~ "/oauth/accesstoken")and (request.verb = "POST")</Condition>
+                <Description>Require a valid id_token from Okta</Description>
+                <Request>
+                    <Step>
+                        <Name>Get-Key-ID-and-Issuer</Name>
+                    </Step>
+                    <Step>
+                        <Name>Look-for-cached-JWK</Name>
+                    </Step>
+                    <Step>
+                        <Name>Fetch-OpenID-Configuration</Name>
+                        <Condition>cached.okta_jwks = null</Condition>
+                    </Step>
+                    <Step>
+                        <Name>Extract-JWKS-URI</Name>
+                        <Condition>cached.okta_jwks = null</Condition>
+                    </Step>
+                    <Step>
+                        <Name>Extract-JWKS-URI-without-protocol</Name>
+                        <Condition>cached.okta_jwks = null</Condition>
+                    </Step>
+                    <Step>
+                        <Name>Fetch-JWKS-URI</Name>
+                        <Condition>cached.okta_jwks = null</Condition>
+                    </Step>
+                    <Step>
+                        <Name>Store-JWKS-response-content-in-variable</Name>
+                        <Condition>cached.okta_jwks = null</Condition>
+                    </Step>
+                    <Step>
+                        <Name>Cache-JWK</Name>
+                        <Condition>cached.okta_jwks = null</Condition>
+                    </Step>
+                    <Step>
+                        <Name>Normalize-Okta-JWKS-variable</Name>
+                        <Condition>cached.okta_jwks != null</Condition>
+                    </Step>
+                    <Step>
+                        <Name>Fetch-Modulus-and-Exponent-for-Key-ID</Name>
+                    </Step>
+                    <Step>
+                        <Name>JWT-Parse-Verify-RS256-okta</Name>
+                    </Step>
+                    <Step>
+                        <Name>Configure-OAuth</Name>
+                    </Step>
+                    <Step>
+                        <Name>Error-on-invalid-token</Name>
+                        <Condition>jwt_isValid != true</Condition>
+                    </Step>
+                </Request>
+                <Response>
+                    <Step>
+                        <Name>Generate-Access-Token</Name>
+                    </Step>
+                </Response>
+            </Flow>
+            <Flow name="Secured REST Time Service">
+                <Description/>
+                <Request>
+                    <Step>
+                        <Name>VerifyOAuthAccessToken</Name>
+                    </Step>
+                </Request>
+                <Response/>
+                <Condition>(proxy.pathsuffix MatchesPath "/time_t")</Condition>
+            </Flow>
+        </Flows>
+        <!-- catch all route -->
+        <RouteRule name="default"/>
+    </ProxyEndpoint>
+
+## Resources
+
+### java
+
+Java are stored in this repository as .JAR files.
+
+### jsc
+
+-   Fetch-Modulus-and-Exponent-for-Key-ID.js
+
+        var desired_kid = context.getVariable('id_token.kid');
+        var jwks = JSON.parse(context.getVariable('okta_jwks'));
+        
+        if (jwks.keys) {
+            jwks.keys.forEach(function (key) {
+                if (key.kty === "RSA" && key.kid == desired_kid) {
+                    context.setVariable('public_key.modulus', key.n);
+                    context.setVariable('public_key.exponent', key.e);
+                }
+            });
+        } else {
+            throw new Error("No keys found in JWKS URI result");
+        }
+
+-   Get-Key-ID-and-Issuer.js
+
+    Note the regular expression used to validate Key IDs
+    
+        var raw_id_token = context.getVariable('request.formparam.assertion');
+        context.setVariable('raw_id_token', raw_id_token);
+        var unvalidated_id_token = jwtDecode(raw_id_token);
+        
+        if (unvalidated_id_token === null) {
+            throw new Error("Invalid id_token");
+        }
+        
+        var unvalidated_kid = unvalidated_id_token.header.kid;
+        var unvalidated_iss = unvalidated_id_token.payload.iss;
+        
+        var validated_kid = unvalidated_kid.replace(/[^a-zA-Z0-9-_]/g, "");
+        
+        var validated_iss = false;
+        var domain = unvalidated_iss.split('/')[2];
+        var domain_parts = domain.split('.');
+        var domain_name = domain_parts.slice(domain_parts.length - 2, domain_parts.length).join('.')
+        if (domain_name !== "okta.com" && domain_name !== "oktapreview.com") {
+            throw new Error("Invalid issuer");
+        } else {
+            validated_iss = unvalidated_iss;
+        }
+        
+        context.setVariable('id_token.kid', validated_kid);
+        context.setVariable('id_token.iss', validated_iss);
+        context.setVariable('id_token.iss_domain', domain);
+
+-   jwtDecode.js
+
+        // jwtDecode.js
+        // ------------------------------------------------------------------
+        //
+        // Original from: 
+        //   https://github.com/apigee/iloveapis2015-jwt-jwe-jws/blob/master/jwt_signed/apiproxy/resources/jsc/jwtDecode.js
+        //
+        // created: Thu Oct  8 10:57:40 2015
+        // last saved: <2015-October-08 11:20:16>
+        
+        
+        function base64Decode(input) {
+          // Takes a base 64 encoded string "input", strips any "=" or
+          // "==" padding off it and converts its base 64 numerals into
+          // regular integers (using a string as a lookup table). These
+          // are then written out as 6-bit binary numbers and concatenated
+          // together. The result is split into 8-bit sequences and these
+          // are converted to string characters, which are concatenated
+          // and output.
+        
+          // The index/character relationship in the following string acts
+          // as a lookup table to convert from base 64 numerals to
+          // Javascript integers
+          var swaps = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
+              ob = "",
+              output = "",
+              tb = "",
+              i, L;
+        
+          input = input.replace("=",""); // strip padding
+        
+          for (i=0, L = input.length; i < L; i++) {
+            tb = swaps.indexOf(input.charAt(i)).toString(2);
+            while (tb.length < 6) {
+              // Add significant zeroes
+              tb = "0"+tb;
+            }
+            while (tb.length > 6) {
+              // Remove significant bits
+              tb = tb.substring(1);
+            }
+            ob += tb;
+            while (ob.length >= 8) {
+              output += String.fromCharCode(parseInt(ob.substring(0,8),2));
+              ob = ob.substring(8);
+            }
+          }
+          return output;
+        }
+        
+        function jwtDecode(input){
+          var parts = input.split('.'),
+              header, payload;
+          if (parts.length !== 3) {
+            return null; // not a valid JWT
+          }
+          header = base64Decode(parts[0]);
+          header = header.replace(/\0/g, '');
+          header = JSON.parse(header);
+        
+          payload = base64Decode(parts[1]);
+          payload = payload.replace(/\0/g, '');
+          payload = JSON.parse(payload);
+        
+          return {
+            header: header,
+            payload : payload,
+            sig : parts[2]
+          };
+        }

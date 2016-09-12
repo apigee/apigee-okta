@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExtractVariables async="false" continueOnError="false" enabled="true" name="Extract-JWKS-URI">
+    <DisplayName>Extract JWKS URI</DisplayName>
+    <Source>openid_configuration_response.content</Source>
+    <VariablePrefix>openid</VariablePrefix>
+    <JSONPayload>
+        <Variable name="jwks_uri">
+            <JSONPath>$.jwks_uri</JSONPath>
+        </Variable>
+    </JSONPayload>
+</ExtractVariables>

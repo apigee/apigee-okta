@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="Configure-OAuth">
+    <DisplayName>Configure OAuth</DisplayName>
+    <!-- We are setting the OAuth credentials here to better match the RFC 7523 standard -->
+    <Add>
+        <FormParams>
+            <!-- 
+            NOTE:
+            
+            The credentials here must be for 
+            * An Apigee Developer Account, which is
+            * Attached to an Apigee App, that is 
+            * In an Apigee API Product, which
+            * Has this API Proxy listed as a "Resource"
+            
+            Learn more here: http://docs.apigee.com/tutorials/secure-calls-your-api-through-oauth-20-client-credentials
+            -->
+            <FormParam name="grant_type">client_credentials</FormParam>
+            <FormParam name="client_id">ADD YOUR CLIENT ID HERE</FormParam>
+            <FormParam name="client_secret">ADD YOUR CLIENT SECRET HERE</FormParam>
+        </FormParams>
+    </Add>
+    <AssignTo createNew="false" transport="http" type="request"/>
+</AssignMessage>

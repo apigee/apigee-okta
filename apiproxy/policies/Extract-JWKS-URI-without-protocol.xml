@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExtractVariables async="false" continueOnError="false" enabled="true" name="Extract-JWKS-URI-without-protocol">
+    <DisplayName>Extract JWKS URI without protocol</DisplayName>
+    <Variable name="openid.jwks_uri">
+        <Pattern ignoreCase="true">https://{jwks_url_host}/{jwks_url_path}</Pattern>
+    </Variable>
+</ExtractVariables>

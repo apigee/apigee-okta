@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<LookupCache async="false" continueOnError="false" enabled="true" name="Look-for-cached-JWK">
+    <DisplayName>Look for cached JWK</DisplayName>
+    <CacheKey>
+        <KeyFragment ref="id_token.iss_domain"/>
+    </CacheKey>
+    <CacheResource>jwk_cache</CacheResource>
+    <Scope>Exclusive</Scope>
+    <AssignTo>cached.okta_jwks</AssignTo>
+</LookupCache>

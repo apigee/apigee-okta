@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<RaiseFault async="false" continueOnError="false" enabled="true" name="Error-on-invalid-token">
+    <DisplayName>Error on invalid token</DisplayName>
+    <FaultResponse>
+        <Set>
+            <Payload contentType="text/plain"/>
+            <StatusCode>400</StatusCode>
+            <ReasonPhrase>Invalid id_token</ReasonPhrase>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

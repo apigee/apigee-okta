@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<OAuthV2 async="false" continueOnError="false" enabled="true" name="Generate-Access-Token">
+    <DisplayName>Generate Access Token</DisplayName>
+    <!-- 3600000 is 1 hour in milliseconds -->
+    <!-- WARNING: On a production system, this should be issued for the remaining valid time of the id_token -->
+    <ExpiresIn>3600000</ExpiresIn>
+    <Operation>GenerateAccessToken</Operation>
+    <SupportedGrantTypes>
+        <GrantType>client_credentials</GrantType>
+    </SupportedGrantTypes>
+    <GenerateResponse/>
+</OAuthV2>

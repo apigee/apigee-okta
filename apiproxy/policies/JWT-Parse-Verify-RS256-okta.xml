@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<JavaCallout name="JWT-Parse-Verify-RS256-okta">
+    <Properties>
+        <Property name="algorithm">RS256</Property>
+        <Property name="jwt">{request.formparam.assertion}</Property>
+        <Property name="modulus">{public_key.modulus}</Property>
+        <Property name="exponent">{public_key.exponent}</Property>
+        <!-- Claims to verify. WARNING! On a production system, you MUST validate the 'aud'  -->
+        <!-- See also: http://developer.okta.com/docs/api/resources/oidc.html#validating-id-tokens -->
+        <!-- <Property name="claim_iss">https://example.okta.com</Property> -->
+        <Property name="claim_iss">{id_token.iss}</Property>
+        <!-- <Property name="claim_aud">aBCdEf0GhiJkLMno1pq2</Property> -->
+        <!-- You can include custom claims: -->
+        <!-- <Property name="claim_shoesize">8.5</Property> -->
+    </Properties>
+    <ClassName>com.apigee.callout.jwtsigned.JwtParserCallout</ClassName>
+    <ResourceURL>java://jwt-signed-edge-callout.jar</ResourceURL>
+</JavaCallout>

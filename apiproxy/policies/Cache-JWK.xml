@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PopulateCache async="false" continueOnError="false" enabled="true" name="Cache-JWK">
+    <DisplayName>Cache JWK</DisplayName>
+    <CacheKey>
+        <Prefix/>
+        <KeyFragment ref="id_token.iss_domain"/>
+    </CacheKey>
+    <CacheResource>jwk_cache</CacheResource>
+    <Scope>Exclusive</Scope>
+    <ExpirySettings>
+        <TimeoutInSec>3600</TimeoutInSec>
+    </ExpirySettings>
+    <Source>okta_jwks</Source>
+</PopulateCache>

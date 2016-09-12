@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExtractVariables async="false" continueOnError="false" enabled="true" name="Store-JWKS-response-content-in-variable">
+    <DisplayName>Store JWKS response content in variable</DisplayName>
+    <Variable name="jwks_response.content">
+        <Pattern>{okta_jwks}</Pattern>
+    </Variable>
+</ExtractVariables>

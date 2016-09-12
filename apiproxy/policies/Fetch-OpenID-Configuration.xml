@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ServiceCallout async="false" continueOnError="false" enabled="true" name="Fetch-OpenID-Configuration">
+    <DisplayName>Fetch OpenID Configuration</DisplayName>
+    <Response>openid_configuration_response</Response>
+    <HTTPTargetConnection>
+        <URL>https://{id_token.iss_domain}/.well-known/openid-configuration</URL>
+    </HTTPTargetConnection>
+</ServiceCallout>
