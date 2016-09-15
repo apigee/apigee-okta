@@ -23,6 +23,11 @@ Server") via tokens issued by Okta.
 This project leverages the following project for JWT validations:
 https://github.com/apigee/iloveapis2015-jwt-jwe-jws
 
+It also leverages the following jars:
+ - guava: https://github.com/google/guava which is published under Apache 2.0 license
+ - json-smart: https://github.com/netplex/json-smart-v1 which is published under Apache 2.0 license
+ - Nimbus-JOSE-JWT :  https://bitbucket.org/connect2id/nimbus-jose-jwt/wiki/Home which is published under Apache 2.0 license
+
 # Creating an Okta application for OpenID Connect
 
 Follow the steps below if you haven't yet created an Okta
